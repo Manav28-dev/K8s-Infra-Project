@@ -15,10 +15,10 @@ spec:
     spec:
       containers:
         - name: backend
-          # CHANGE_ME: replace with ghcr.io/<your-github-username>/notes-app:latest
+          # manav28-dev: replace with ghcr.io/<your-github-username>/notes-app:latest
           # after your first successful CI run (see README). Placeholder image
           # below fails to pull on purpose until you swap it in.
-          image: ghcr.io/CHANGE_ME/notes-app:latest
+          image: ghcr.io/manav28-dev/notes-app:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
