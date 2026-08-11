@@ -3,3 +3,8 @@ target/
 .idea/
 *.iml
 .DS_Store
+
+# Self-hosted GitHub Actions runner (README step 4) — installed locally, never committed.
+# It ships a ~226 MB release tarball plus hundreds of binaries, and its _work/_diag
+# directories hold build scratch space and registration credentials.
+actions-runner/
