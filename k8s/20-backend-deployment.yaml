@@ -42,11 +42,23 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          # Cold JVM boot under this container's CPU limit takes ~70-90s (observed
+          # 73s), well past what a liveness probe should ever wait on its own -
+          # without this, liveness kills the container mid-startup, every time,
+          # forever. startupProbe gates liveness/readiness until the app has
+          # booted once, with its own generous allowance (up to 150s here); once
+          # it succeeds, the probes below take over for steady-state health.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
@@ -54,7 +66,7 @@ spec:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
