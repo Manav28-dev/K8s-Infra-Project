@@ -1,0 +1,53 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'k8s/**'
+      - '.github/workflows/ci-cd.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute lowercase image name
+        shell: bash
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE=ghcr.io/${OWNER}/notes-app" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        shell: bash
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build image
+        shell: bash
+        run: docker build -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" ./app
+
+      - name: Push image
+        shell: bash
+        run: |
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      - name: Apply base manifests
+        shell: bash
+        run: kubectl apply -k k8s/
+
+      - name: Deploy new image
+        shell: bash
+        run: kubectl set image deployment/backend backend="$IMAGE:${{ github.sha }}" -n notes
+
+      - name: Wait for rollout
+        shell: bash
+        run: kubectl rollout status deployment/backend -n notes --timeout=180s

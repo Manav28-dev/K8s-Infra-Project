@@ -1,0 +1,10 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: devops-challenge
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # host:8080 -> node:30080 -> Service backend (NodePort 30080)
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP

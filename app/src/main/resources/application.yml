@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: notes
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/notesdb}
+    username: ${SPRING_DATASOURCE_USERNAME:notesuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:notespass}
+    hikari:
+      connection-timeout: 3000
+      initialization-fail-timeout: -1
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      # The DB check is deliberately wired into the READINESS group (traffic
+      # gating) and left out of LIVENESS (process restart). A dead database
+      # connection means "stop sending me traffic", not "kill and restart me" —
+      # restarting the JVM will not fix a bad password or an unreachable DB.
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
