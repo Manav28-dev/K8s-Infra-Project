@@ -5,6 +5,16 @@ metadata:
   namespace: notes
 spec:
   replicas: 2
+  # Default (maxSurge:1, maxUnavailable:0 at this replica count) updates pods
+  # one at a time - two sequential ~90s cold-JVM boots plus scheduling
+  # overhead runs well past a 5+ minute wall clock on this hardware. Surging
+  # both new pods at once lets them boot in parallel instead, cutting real
+  # rollout time roughly in half.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: backend
@@ -15,9 +25,6 @@ spec:
     spec:
       containers:
         - name: backend
-          # manav28-dev: replace with ghcr.io/<your-github-username>/notes-app:latest
-          # after your first successful CI run (see README). Placeholder image
-          # below fails to pull on purpose until you swap it in.
           image: ghcr.io/manav28-dev/notes-app:latest
           imagePullPolicy: Always
           ports:
@@ -42,12 +49,6 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          # Cold JVM boot under this container's CPU limit takes ~70-90s (observed
-          # 73s), well past what a liveness probe should ever wait on its own -
-          # without this, liveness kills the container mid-startup, every time,
-          # forever. startupProbe gates liveness/readiness until the app has
-          # booted once, with its own generous allowance (up to 150s here); once
-          # it succeeds, the probes below take over for steady-state health.
           startupProbe:
             httpGet:
               path: /actuator/health/liveness
