@@ -50,4 +50,8 @@ jobs:
 
       - name: Wait for rollout
         shell: bash
-        run: kubectl rollout status deployment/backend -n notes --timeout=180s
+        # 2 replicas update sequentially (maxSurge:1, maxUnavailable:0 is the
+        # k8s default at this replica count), and each pod's startupProbe can
+        # take up to ~90s to pass on this machine's CPU-limited containers -
+        # 180s wasn't enough headroom for two of those back to back.
+        run: kubectl rollout status deployment/backend -n notes --timeout=420s
