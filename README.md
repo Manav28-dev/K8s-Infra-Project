@@ -184,32 +184,3 @@ kubectl get pods -n notes -w
 kubectl get endpoints backend -n notes
 curl localhost:8080/api/notes
 ```
-
-## 9. Video script (8–12 min)
-
-**Live demo (3–4 min)** — `kubectl get all -n notes`, `curl` the API, show a GitHub
-Actions run completing end-to-end (push → build → GHCR push → deploy → rollout).
-
-**Architecture walkthrough (2–3 min)** — draw the diagram above: `kind` cluster,
-namespace `notes`, two Deployments/Services, PVC for Postgres persistence, why a
-self-hosted runner (needs direct access to your local cluster — a hosted runner
-can't reach it), why probes were the chosen reliability feature.
-
-**Failure debugging walkthrough (2–3 min)** — run through section 8 live: break it,
-show `kubectl get pods` (Running but not Ready, restarts = 0), voice the "is it
-crashing?" wrong assumption and rule it out, check logs/describe/port-forwarded health
-endpoint to find the real cause, fix it, show recovery.
-
-**Tradeoff discussion (1–2 min)**, straight from what's already simplified here:
-
-- Plaintext `Secret` in git instead of a real secret manager.
-- No Ingress/TLS — NodePort + a kind port mapping instead, fine for one local cluster,
-  not for multiple services or external traffic.
-- `spring.jpa.hibernate.ddl-auto=update` instead of versioned migrations (Flyway/
-  Liquibase) — fine for a demo, dangerous for a real schema history.
-- Single Postgres replica, no managed backups/replication — a real deployment would use
-  a managed DB (RDS/Cloud SQL) or an operator (Zalando/CloudNativePG) with backups.
-- No autoscaling — fixed 2 replicas; under real load you'd add an HPA plus the
-  metrics-server this local setup doesn't run.
-- No resource-based circuit breaking/retries between backend and DB — a sustained DB
-  outage currently just means "not ready" indefinitely, not graceful degradation.
